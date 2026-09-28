@@ -1,4 +1,4 @@
-import { telegram, validateInitData } from '../_lib/telegram.js'
+import { telegram, validateInitData } from './telegram.js'
 import { validateBlocks } from '../_lib/validateBlocks.js'
 import { findChannel } from '../_lib/kv.js'
 
