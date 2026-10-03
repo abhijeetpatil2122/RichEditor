@@ -4,7 +4,12 @@ const ALLOWED_TAGS = new Set([
 
 function cleanNode(node, out) {
   if (node.nodeType === Node.TEXT_NODE) {
-    out.appendChild(document.createTextNode(node.textContent))
+    // Strip zero-width spaces — these are only ever a transient caret
+    // anchor inserted by RichTextInput after formatting/line-break
+    // operations (see placeCaretAfterNode) and should never reach saved
+    // content or the outgoing message.
+    const text = node.textContent.replace(/\u200B/g, '')
+    if (text) out.appendChild(document.createTextNode(text))
     return
   }
   if (node.nodeType !== Node.ELEMENT_NODE) return
