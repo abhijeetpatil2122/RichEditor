@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import BottomSheet from '../components/BottomSheet.jsx'
 import Icon from '../components/Icon.jsx'
-import { api } from '../telegram/api.js'
+import { api, mediaFileUrl } from '../telegram/api.js'
 import { haptic } from '../telegram/webApp.js'
 
 export default function SendSheet({ open, onClose, user, channels, blocks, onResult, onManageChannels }) {
@@ -62,7 +62,9 @@ export default function SendSheet({ open, onClose, user, channels, blocks, onRes
             className="destination-row"
             onClick={() => send({ key: ch.id, payload: { type: 'channel', chat_id: ch.id } }, ch.title)}
           >
-            <div className="destination-avatar">{ch.title?.charAt(0)?.toUpperCase() || '#'}</div>
+            <div className="destination-avatar">
+              {ch.photoFileId ? <img src={mediaFileUrl(ch.photoFileId)} alt="" /> : ch.title?.charAt(0)?.toUpperCase() || '#'}
+            </div>
             <div className="destination-info">
               <div className="destination-title">{ch.title}</div>
               {ch.username && <div className="destination-sub">@{ch.username}</div>}
