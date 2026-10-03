@@ -22,7 +22,15 @@ export default async function handler(req, res) {
       throw new Error('The bot needs the "Post messages" permission in this channel.')
     }
 
-    const channel = { id: chat.id, title: chat.title || 'Untitled channel', username: chat.username || null }
+    const channel = {
+      id: chat.id,
+      title: chat.title || 'Untitled channel',
+      username: chat.username || null,
+      // getChat (unlike the Chat embedded in a Message) includes the
+      // channel's photo — small_file_id works directly with our
+      // /api/media/file.js proxy, same as any other file_id.
+      photoFileId: chat.photo?.small_file_id || null
+    }
     return res.status(200).json({ ok: true, channel })
   } catch (err) {
     console.error('channels/verify error:', err?.telegram || err)
