@@ -42,11 +42,7 @@ export default function RichTextInput({
     range.deleteContents()
     const br = document.createElement('br')
     range.insertNode(br)
-    range.setStartAfter(br)
-    range.setEndAfter(br)
-    range.collapse(true)
-    selection.removeAllRanges()
-    selection.addRange(range)
+    placeCaretAfterNode(selection, br)
     onChange?.(ref.current.innerHTML)
   }
 
@@ -100,6 +96,26 @@ export default function RichTextInput({
   )
 }
 
+/**
+ * Places the caret right after `node` using a zero-width-space text node as
+ * an anchor, instead of just "after the element" with nothing there. A bare
+ * setStartAfter(el)/collapse(true) with no following text node is ambiguous
+ * in most browsers' contenteditable implementations — typing right after
+ * that keeps inheriting the formatting of the preceding element (the
+ * "formatting keeps continuing" bug) and a trailing <br> with nothing after
+ * it can fail to render a visible line. An explicit plain-text anchor fixes
+ * both. The ZWSP is invisible and gets stripped on blur (sanitizeInlineHtml).
+ */
+function placeCaretAfterNode(selection, node) {
+  const anchor = document.createTextNode('\u200B')
+  node.parentNode.insertBefore(anchor, node.nextSibling)
+  const range = document.createRange()
+  range.setStart(anchor, 1)
+  range.collapse(true)
+  selection.removeAllRanges()
+  selection.addRange(range)
+}
+
 /** True if there's a non-collapsed text selection currently inside `container`. */
 export function hasActiveSelection(container) {
   if (!container) return false
@@ -125,13 +141,9 @@ export function applyInlineMark(container, tagName, attrs = {}) {
     range.insertNode(el)
   }
 
-  // Put the caret right after the new element so typing continues as
-  // plain text instead of leaving the selection in limbo.
-  const after = document.createRange()
-  after.setStartAfter(el)
-  after.collapse(true)
-  selection.removeAllRanges()
-  selection.addRange(after)
+  // Anchor the caret just after the formatted element so typing continues
+  // as plain text instead of inheriting bold/italic/etc.
+  placeCaretAfterNode(selection, el)
 
   return sanitizeInlineHtml(container.innerHTML)
 }
