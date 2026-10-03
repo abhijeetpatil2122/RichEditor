@@ -104,7 +104,7 @@ export function createBlock(type, overrides = {}) {
     case BLOCK.MATH:
       return { id, type, expression: '', ...overrides }
     case BLOCK.MAP:
-      return { id, type, latitude: '', longitude: '', zoom: 14, width: 600, height: 300, caption: '', ...overrides }
+      return { id, type, latitude: '', longitude: '', zoom: 14, width: 600, height: 300, caption: '', credit: '', ...overrides }
     case BLOCK.MEDIA:
       return {
         id,
@@ -112,6 +112,7 @@ export function createBlock(type, overrides = {}) {
         kind: overrides.kind || 'photo', // photo | video | animation | audio | document | voice_note
         source: null, // { mode: 'url', url } | { mode: 'upload', previewUrl, fileId, status, name }
         caption: '',
+        credit: '',
         ...overrides
       }
     case BLOCK.MULTI_MEDIA:
@@ -121,6 +122,7 @@ export function createBlock(type, overrides = {}) {
         layout: overrides.layout || 'collage', // 'collage' | 'slideshow'
         items: overrides.items?.length ? overrides.items : [createMediaItem('photo'), createMediaItem('photo')],
         caption: '',
+        credit: '',
         ...overrides
       }
     default:
