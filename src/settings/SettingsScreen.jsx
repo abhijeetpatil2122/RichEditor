@@ -2,6 +2,7 @@ import React from 'react'
 import Icon from '../components/Icon.jsx'
 import ChannelForm from './ChannelForm.jsx'
 import { removeChannel as removeChannelFromStorage } from '../telegram/channelStorage.js'
+import { mediaFileUrl } from '../telegram/api.js'
 import { haptic, showConfirm } from '../telegram/webApp.js'
 
 // No header here on purpose — Telegram's own BackButton (wired up in
@@ -41,7 +42,10 @@ export default function SettingsScreen({ user, channels, onChannelsChanged }) {
         <div className="settings-card">
           {channels.map((ch) => (
             <div className="channel-row" key={ch.id}>
-              <div>
+              <div className="channel-avatar">
+                {ch.photoFileId ? <img src={mediaFileUrl(ch.photoFileId)} alt="" /> : ch.title?.charAt(0)?.toUpperCase() || '#'}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="name">{ch.title}</div>
                 {ch.username && <div className="username">@{ch.username}</div>}
               </div>
