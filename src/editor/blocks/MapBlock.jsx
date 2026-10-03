@@ -52,6 +52,12 @@ export default function MapBlock({ block }) {
         value={block.caption}
         onChange={(e) => set({ caption: e.target.value })}
       />
+      <input
+        className="media-caption-input"
+        placeholder="Credit (optional)"
+        value={block.credit}
+        onChange={(e) => set({ credit: e.target.value })}
+      />
     </div>
   )
 }
