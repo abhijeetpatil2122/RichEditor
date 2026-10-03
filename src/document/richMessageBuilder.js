@@ -1,0 +1,213 @@
+// Turns our editor document (src/document/schema.js) into the `blocks`
+// array Telegram's sendRichMessage expects (Bot API 10.1–10.3, "Rich
+// Messages"). This runs entirely in the browser (uses DOMParser) — the
+// finished JSON is what actually gets POSTed to /api/send, and the
+// server only re-validates shape/size, it does not rebuild it.
+//
+// Every shape below (including RichBlockCaption's { text, credit? }, and
+// expandable_blockquote's flat `text` field) was confirmed directly
+// against the Bot API 10.3 TypeScript type definitions — nothing here is
+// a guess anymore.
+import { BLOCK, LIST_STYLE, plainText } from './schema.js'
+
+const INLINE_TAG_TO_TYPE = {
+  B: 'bold',
+  STRONG: 'bold',
+  I: 'italic',
+  EM: 'italic',
+  U: 'underline',
+  S: 'strikethrough',
+  STRIKE: 'strikethrough',
+  CODE: 'code',
+  SUB: 'subscript',
+  SUP: 'superscript',
+  MARK: 'marked'
+}
+
+/** Recursively turn a DOM node into a Telegram RichText value (string | array | {type,text,...}). */
+function nodeToRichText(node) {
+  if (node.nodeType === Node.TEXT_NODE) return node.textContent
+  if (node.nodeType !== Node.ELEMENT_NODE) return ''
+
+  const children = Array.from(node.childNodes).map(nodeToRichText).filter((v) => v !== '')
+  const inner = children.length === 0 ? '' : children.length === 1 ? children[0] : children
+
+  const tag = node.tagName
+  if (tag === 'A') {
+    const href = node.getAttribute('href') || ''
+    return { type: 'url', text: inner || href, url: href }
+  }
+  if (tag === 'SPAN' && node.getAttribute('data-spoiler') === 'true') {
+    return { type: 'spoiler', text: inner }
+  }
+  const mark = INLINE_TAG_TO_TYPE[tag]
+  if (mark) return { type: mark, text: inner }
+  if (tag === 'BR') return '\n'
+  return inner
+}
+
+/** Sanitized inline HTML (from RichTextInput) -> Telegram RichText union. */
+export function htmlToRichText(html) {
+  const clean = (html || '').trim()
+  if (!clean) return ''
+  const doc = new DOMParser().parseFromString(`<div>${clean}</div>`, 'text/html')
+  const root = doc.body.firstChild
+  const value = nodeToRichText(root)
+  return value === '' ? '' : value
+}
+
+function paragraphFromHtml(html) {
+  return { type: 'paragraph', text: htmlToRichText(html) }
+}
+
+function buildCaption(html) {
+  const text = htmlToRichText(html)
+  return text === '' ? undefined : { text }
+}
+
+function buildListItem(item, style, index) {
+  const out = { blocks: [paragraphFromHtml(item.html)] }
+  if (style === LIST_STYLE.NUMBER) {
+    out.type = '1'
+    out.value = index + 1
+  }
+  if (style === LIST_STYLE.CHECKLIST) {
+    out.has_checkbox = true
+    out.is_checked = !!item.checked
+  }
+  return out
+}
+
+function buildTableCells(rows, align) {
+  return rows.map((row) =>
+    row.map((cell, colIndex) => {
+      const out = { align: align[colIndex] || 'left', valign: 'middle' }
+      const text = htmlToRichText(cell.text)
+      if (text !== '') out.text = text
+      if (cell.isHeader) out.is_header = true
+      if (cell.colspan > 1) out.colspan = cell.colspan
+      if (cell.rowspan > 1) out.rowspan = cell.rowspan
+      return out
+    })
+  )
+}
+
+/** A media item (photo/video/animation/audio/document/voice_note) -> its InputRichBlock, or null if not yet uploaded/filled in. */
+function buildMediaBlock(kind, source, captionHtml) {
+  if (!source) return null
+  const mediaValue = source.mode === 'upload' ? source.fileId : source.url
+  if (!mediaValue) return null
+  const out = { type: kind, [kind]: { type: kind, media: mediaValue } }
+  const caption = buildCaption(captionHtml)
+  if (caption) out.caption = caption
+  return out
+}
+
+/** One editor block -> one Telegram block, or null if it has nothing to send yet. */
+function buildBlock(block) {
+  switch (block.type) {
+    case BLOCK.PARAGRAPH:
+      return paragraphFromHtml(block.html)
+
+    case BLOCK.HEADING:
+      return { type: 'heading', text: htmlToRichText(block.html), size: block.size }
+
+    case BLOCK.PREFORMATTED: {
+      const out = { type: 'pre', text: block.code }
+      if (block.language && block.language !== 'plaintext') out.language = block.language
+      return out
+    }
+
+    case BLOCK.FOOTER:
+      return { type: 'footer', text: htmlToRichText(block.html) }
+
+    case BLOCK.LIST:
+      return {
+        type: 'list',
+        items: block.items
+          .filter((i) => plainText(i.html).trim())
+          .map((item, index) => buildListItem(item, block.style, index))
+      }
+
+    case BLOCK.BLOCKQUOTE: {
+      const out = { type: 'blockquote', blocks: [paragraphFromHtml(block.html)] }
+      if (block.credit?.trim()) out.credit = block.credit.trim()
+      return out
+    }
+
+    case BLOCK.EXPANDABLE_BLOCKQUOTE: {
+      // Unlike `blockquote`, this takes `text` directly (not nested
+      // `blocks`) — and always renders collapsed until tapped.
+      const out = { type: 'expandable_blockquote', text: htmlToRichText(block.html) }
+      if (block.credit?.trim()) out.credit = block.credit.trim()
+      return out
+    }
+
+    case BLOCK.PULLQUOTE: {
+      const out = { type: 'pullquote', text: htmlToRichText(block.html) }
+      if (block.credit?.trim()) out.credit = block.credit.trim()
+      return out
+    }
+
+    case BLOCK.TABLE: {
+      const out = { type: 'table', cells: buildTableCells(block.rows, block.align) }
+      if (block.bordered) out.is_bordered = true
+      if (block.striped) out.is_striped = true
+      if (block.compact) out.is_compact = true
+      if (block.caption?.trim()) out.caption = block.caption.trim()
+      return out
+    }
+
+    case BLOCK.DETAILS: {
+      const bodyText = plainText(block.bodyHtml).trim()
+      return {
+        type: 'details',
+        summary: htmlToRichText(block.summaryHtml),
+        blocks: bodyText ? [paragraphFromHtml(block.bodyHtml)] : [],
+        ...(block.isOpen ? { is_open: true } : {})
+      }
+    }
+
+    case BLOCK.DIVIDER:
+      return { type: 'divider' }
+
+    case BLOCK.MATH:
+      return block.expression.trim() ? { type: 'mathematical_expression', expression: block.expression } : null
+
+    case BLOCK.MAP: {
+      const lat = Number(block.latitude)
+      const lon = Number(block.longitude)
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null
+      const out = {
+        type: 'map',
+        location: { latitude: lat, longitude: lon },
+        zoom: Number(block.zoom) || 14,
+        width: Number(block.width) || 600,
+        height: Number(block.height) || 300
+      }
+      const caption = buildCaption(block.caption)
+      if (caption) out.caption = caption
+      return out
+    }
+
+    case BLOCK.MEDIA:
+      return buildMediaBlock(block.kind, block.source, block.caption)
+
+    case BLOCK.MULTI_MEDIA: {
+      const items = block.items.map((i) => buildMediaBlock(i.kind, i.source, '')).filter(Boolean)
+      if (!items.length) return null
+      const out = { type: block.layout, blocks: items }
+      const caption = buildCaption(block.caption)
+      if (caption) out.caption = caption
+      return out
+    }
+
+    default:
+      return null
+  }
+}
+
+/** Editor document -> { blocks } ready to send as InputRichMessage.blocks. */
+export function buildRichMessageBlocks(doc) {
+  return doc.blocks.map(buildBlock).filter(Boolean)
+}
