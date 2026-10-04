@@ -60,13 +60,9 @@ function paragraphFromHtml(html) {
   return { type: 'paragraph', text: htmlToRichText(html) }
 }
 
-function buildCaption(html, creditText) {
+function buildCaption(html) {
   const text = htmlToRichText(html)
-  if (text === '') return undefined
-  const out = { text }
-  const credit = (creditText || '').trim()
-  if (credit) out.credit = credit
-  return out
+  return text === '' ? undefined : { text }
 }
 
 function buildListItem(item, style, index) {
@@ -97,12 +93,12 @@ function buildTableCells(rows, align) {
 }
 
 /** A media item (photo/video/animation/audio/document/voice_note) -> its InputRichBlock, or null if not yet uploaded/filled in. */
-function buildMediaBlock(kind, source, captionHtml, creditText) {
+function buildMediaBlock(kind, source, captionHtml) {
   if (!source) return null
   const mediaValue = source.mode === 'upload' ? source.fileId : source.url
   if (!mediaValue) return null
   const out = { type: kind, [kind]: { type: kind, media: mediaValue } }
-  const caption = buildCaption(captionHtml, creditText)
+  const caption = buildCaption(captionHtml)
   if (caption) out.caption = caption
   return out
 }
@@ -189,19 +185,19 @@ function buildBlock(block) {
         width: Number(block.width) || 600,
         height: Number(block.height) || 300
       }
-      const caption = buildCaption(block.caption, block.credit)
+      const caption = buildCaption(block.caption)
       if (caption) out.caption = caption
       return out
     }
 
     case BLOCK.MEDIA:
-      return buildMediaBlock(block.kind, block.source, block.caption, block.credit)
+      return buildMediaBlock(block.kind, block.source, block.caption)
 
     case BLOCK.MULTI_MEDIA: {
       const items = block.items.map((i) => buildMediaBlock(i.kind, i.source, '')).filter(Boolean)
       if (!items.length) return null
       const out = { type: block.layout, blocks: items }
-      const caption = buildCaption(block.caption, block.credit)
+      const caption = buildCaption(block.caption)
       if (caption) out.caption = caption
       return out
     }
