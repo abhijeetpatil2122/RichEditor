@@ -148,23 +148,38 @@ export function applyInlineMark(container, tagName, attrs = {}) {
   return sanitizeInlineHtml(container.innerHTML)
 }
 
-/** Strips all inline formatting from the current selection back to plain text. */
+/**
+ * Strips all inline formatting from the current selection back to plain
+ * text. Runs execCommand('removeFormat') first — the browser's own
+ * built-in, battle-tested handling of the standard tags — then does a
+ * manual plain-text replacement pass as well, since our custom tags
+ * (sub/sup/mark/spoiler-span) aren't "standard formatting" as far as
+ * execCommand is concerned and wouldn't otherwise be touched.
+ */
 export function clearInlineMarks(container) {
   const selection = window.getSelection()
   if (!selection || selection.rangeCount === 0) return null
   const range = selection.getRangeAt(0)
   if (!container.contains(range.commonAncestorContainer) || range.collapsed) return null
 
-  const text = range.toString()
-  range.deleteContents()
-  const node = document.createTextNode(text)
-  range.insertNode(node)
+  try {
+    document.execCommand('removeFormat')
+  } catch {
+    // Unsupported in this engine — the manual pass below still runs.
+  }
 
-  const after = document.createRange()
-  after.setStartAfter(node)
-  after.collapse(true)
-  selection.removeAllRanges()
-  selection.addRange(after)
+  const current = window.getSelection()
+  const liveRange = current?.rangeCount ? current.getRangeAt(0) : null
+  if (!liveRange || liveRange.collapsed || !container.contains(liveRange.commonAncestorContainer)) {
+    return sanitizeInlineHtml(container.innerHTML)
+  }
+
+  const text = liveRange.toString()
+  liveRange.deleteContents()
+  const node = document.createTextNode(text)
+  liveRange.insertNode(node)
+
+  placeCaretAfterNode(current, node)
 
   return sanitizeInlineHtml(container.innerHTML)
 }
