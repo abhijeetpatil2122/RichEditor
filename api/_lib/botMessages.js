@@ -12,8 +12,18 @@
 
 const APP_URL = process.env.APP_URL || ''
 
-function openEditorKeyboard(text = '✏️ Open editor') {
-  return APP_URL ? { inline_keyboard: [[{ text, web_app: { url: APP_URL } }]] } : undefined
+function openEditorButton(text = '✏️ Open editor') {
+  return {
+    type: 'buttons',
+    align: 'center',
+    buttons: [
+      {
+        text,
+        style: 'primary',
+        web_app: { url: APP_URL }
+      }
+    ]
+  }
 }
 
 const COMMANDS = {
@@ -34,17 +44,7 @@ const COMMANDS = {
       },
       { type: 'divider' },
       { type: 'footer', text: 'Need help? Send /help.' },
-      {
-        type: 'buttons',
-        align: 'center',
-        buttons: [
-          {
-            text: '✏️ Open editor',
-            style: 'primary',
-            web_app: { url: APP_URL }
-          }
-        ]
-      }
+      openEditorButton()
     ]
   },
 
@@ -63,7 +63,7 @@ const COMMANDS = {
       { type: 'divider' },
       { type: 'footer', text: 'This section will grow as features are added.' }
     ],
-    keyboard: () => openEditorKeyboard()
+    button: () => openEditorButton()
   },
 
   howtouse: {
@@ -95,11 +95,11 @@ const COMMANDS = {
   }
 }
 
-/** Returns { blocks, reply_markup? } for a known command, or null. */
+/** Returns { blocks } for a known command, or null. */
 export function getCommandMessage(command, user) {
   const entry = COMMANDS[command]
   if (!entry) return null
-  const blocks = entry.blocks.map((block) => {
+  const blocks = [...entry.blocks, ...(entry.button ? [entry.button()] : [])].map((block) => {
     if (command === 'start' && block.type === 'heading') {
       const firstName = typeof user?.first_name === 'string' ? user.first_name.trim() : ''
       const lastName = typeof user?.last_name === 'string' ? user.last_name.trim() : ''
@@ -108,8 +108,7 @@ export function getCommandMessage(command, user) {
     }
     return block
   })
-  const reply_markup = entry.keyboard?.()
-  return reply_markup ? { blocks, reply_markup } : { blocks }
+  return { blocks }
 }
 
 /** For registering with setMyCommands (see README) — keep in sync with COMMANDS above. */
