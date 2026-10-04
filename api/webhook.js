@@ -10,7 +10,7 @@ async function handleMessage(message) {
   const command = text.split(/\s+/)[0].slice(1).split('@')[0].toLowerCase()
   if (!KNOWN_COMMANDS.has(command)) return
 
-  const reply = getCommandMessage(command)
+  const reply = getCommandMessage(command, message.from)
   if (!reply) return
 
   await telegram('sendRichMessage', {
