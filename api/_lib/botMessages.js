@@ -84,14 +84,10 @@ const COMMANDS = {
 
   about: {
     blocks: [
-      { type: 'heading', size: 2, text: 'About Rich Message Editor' },
+      { type: 'heading', size: 2, text: 'About' },
       {
         type: 'paragraph',
-        text: 'A Telegram Mini App for creating and publishing Bot API Rich Messages without writing JSON by hand.'
-      },
-      {
-        type: 'paragraph',
-        text: 'Create structured posts with rich formatting, quotes, lists, tables, media, and more — then preview and send them directly to Telegram chats or channels.'
+        text: 'A Telegram Mini App for creating and publishing 🆕 Rich Messages Post in channels with ease, without needing a Telegram Premium subscription.'
       }
     ],
     button: () => openEditorButton()
