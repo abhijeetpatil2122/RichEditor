@@ -55,13 +55,13 @@ const COMMANDS = {
       {
         type: 'list',
         items: [
-          { blocks: [{ type: 'paragraph', text: [{ type: 'bold', text: '/start' }, ' — open the editor'] }] },
+          { blocks: [{ type: 'paragraph', text: [{ type: 'bold', text: '/start' }, ' — welcome and open the editor'] }] },
           { blocks: [{ type: 'paragraph', text: [{ type: 'bold', text: '/howtouse' }, ' — a step-by-step walkthrough'] }] },
-          { blocks: [{ type: 'paragraph', text: [{ type: 'bold', text: '/about' }, ' — what this bot is'] }] }
+          { blocks: [{ type: 'paragraph', text: [{ type: 'bold', text: '/about' }, ' — what this bot is'] }] },
+          { blocks: [{ type: 'paragraph', text: [{ type: 'bold', text: '/help' }, ' — get this help menu'] }] }
         ]
       },
-      { type: 'divider' },
-      { type: 'footer', text: 'This section will grow as features are added.' }
+      { type: 'divider' }
     ],
     button: () => openEditorButton()
   },
@@ -113,8 +113,8 @@ export function getCommandMessage(command, user) {
 
 /** For registering with setMyCommands (see README) — keep in sync with COMMANDS above. */
 export const COMMAND_LIST = [
-  { command: 'start', description: 'Open the Rich Message editor' },
-  { command: 'help', description: 'List available commands' },
-  { command: 'howtouse', description: 'Step-by-step walkthrough' },
-  { command: 'about', description: 'What this bot is' }
+  { command: 'start', description: 'Welcome and open the editor' },
+  { command: 'help', description: 'Get the help menu' },
+  { command: 'howtouse', description: 'Learn how to use the editor' },
+  { command: 'about', description: 'Learn about the bot' }
 ]
