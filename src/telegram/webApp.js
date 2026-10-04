@@ -100,6 +100,26 @@ export function showConfirm(message) {
   })
 }
 
+/**
+ * Native popup with up to 3 buttons (Bot API 6.2+). Pass buttons with a
+ * `type` of 'destructive' for Telegram's own red/destructive styling — the
+ * native popup isn't part of our DOM, so it always matches the client's
+ * theme automatically; there's no CSS variable to set on our side.
+ * Resolves the pressed button's `id` ("" if it had none), or null if the
+ * popup was dismissed without a button press.
+ * buttons: Array<{ id?: string, type?: 'default'|'ok'|'close'|'cancel'|'destructive', text?: string }>
+ */
+export function showPopup({ title, message, buttons }) {
+  const tg = getWebApp()
+  return new Promise((resolve) => {
+    if (tg?.showPopup) {
+      tg.showPopup({ title, message, buttons }, (id) => resolve(id ?? null))
+    } else {
+      resolve(window.confirm(message) ? buttons?.[0]?.id ?? 'ok' : null)
+    }
+  })
+}
+
 // ---- Native gallery picker (Bot API 7.7+) --------------------------------
 /** Returns a File the user picked from their gallery, or null if unsupported/cancelled. */
 export function pickPhotoNative() {
