@@ -91,7 +91,7 @@ const COMMANDS = {
       },
       { type: 'footer', text: 'Built with sendRichMessage — Bot API 10.x.' }
     ],
-    keyboard: () => openEditorKeyboard()
+    button: () => openEditorButton()
   }
 }
 
