@@ -33,9 +33,19 @@ const COMMANDS = {
         ]
       },
       { type: 'divider' },
-      { type: 'footer', text: 'Need help? Send /help.' }
-    ],
-    keyboard: () => openEditorKeyboard()
+      { type: 'footer', text: 'Need help? Send /help.' },
+      {
+        type: 'buttons',
+        align: 'center',
+        buttons: [
+          {
+            text: '✏️ Open editor',
+            style: 'primary',
+            web_app: { url: APP_URL }
+          }
+        ]
+      }
+    ]
   },
 
   help: {
