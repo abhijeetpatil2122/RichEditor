@@ -19,10 +19,10 @@ function openEditorKeyboard(text = '✏️ Open editor') {
 const COMMANDS = {
   start: {
     blocks: [
-      { type: 'heading', size: 2, text: 'Welcome to Rich Message Editor 👋' },
+      { type: 'heading', size: 2, text: 'Welcome {name} to Rich Message Editor 👋' },
       {
         type: 'paragraph',
-        text: 'Build formatted posts — headings, quotes, lists, tables, media — right inside Telegram, and send them straight to a channel.'
+        text: 'Build formatted posts — headings, quotes, lists, tables, media — right inside Bots Miniapp, and send them straight to a channel.'
       },
       {
         type: 'list',
@@ -96,11 +96,20 @@ const COMMANDS = {
 }
 
 /** Returns { blocks, reply_markup? } for a known command, or null. */
-export function getCommandMessage(command) {
+export function getCommandMessage(command, user) {
   const entry = COMMANDS[command]
   if (!entry) return null
+  const blocks = entry.blocks.map((block) => {
+    if (command === 'start' && block.type === 'heading') {
+      const firstName = typeof user?.first_name === 'string' ? user.first_name.trim() : ''
+      const lastName = typeof user?.last_name === 'string' ? user.last_name.trim() : ''
+      const name = [firstName, lastName].filter(Boolean).join(' ') || 'there'
+      return { ...block, text: block.text.replace('{name}', name) }
+    }
+    return block
+  })
   const reply_markup = entry.keyboard?.()
-  return reply_markup ? { blocks: entry.blocks, reply_markup } : { blocks: entry.blocks }
+  return reply_markup ? { blocks, reply_markup } : { blocks }
 }
 
 /** For registering with setMyCommands (see README) — keep in sync with COMMANDS above. */
