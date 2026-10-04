@@ -73,8 +73,8 @@ const COMMANDS = {
         type: 'list',
         items: [
           { type: '1', value: 1, blocks: [{ type: 'paragraph', text: 'Tap "Open editor" to launch the Mini App' }] },
-          { type: '1', value: 2, blocks: [{ type: 'paragraph', text: 'Use the bottom toolbar to add blocks — text, headings, quotes, lists, tables, media, and more' }] },
-          { type: '1', value: 3, blocks: [{ type: 'paragraph', text: 'Add your channel once in Settings (the bot needs to be an admin there, with permission to post)' }] },
+          { type: '1', value: 2, blocks: [{ type: 'paragraph', text: 'Add your channel once in Settings (the bot needs to be an admin there, with permission to post)' }] },
+          { type: '1', value: 3, blocks: [{ type: 'paragraph', text: 'Use the bottom toolbar to add blocks — text, headings, quotes, lists, tables, media, and more' }] },
           { type: '1', value: 4, blocks: [{ type: 'paragraph', text: 'Tap Send, then choose your chat with the bot to preview it, or the channel to post it' }] }
         ]
       }
