@@ -2,7 +2,7 @@
 // than plain sendMessage, per the project's own format. Deliberately simple
 // placeholder copy for now — refine the actual wording later; this just
 // establishes the pattern (and that /help, /howtouse, /about all exist and
-// route correctly) with one shared `openEditorKeyboard()` button.
+// route correctly) with one shared `openEditorButton()` block.
 //
 // This is intentionally separate from api/send.js: send.js is the Mini
 // App's own authenticated "post this document" endpoint (initData,
@@ -79,7 +79,7 @@ const COMMANDS = {
         ]
       }
     ],
-    keyboard: () => openEditorKeyboard()
+    button: () => openEditorButton()
   },
 
   about: {
