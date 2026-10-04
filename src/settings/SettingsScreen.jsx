@@ -3,7 +3,7 @@ import Icon from '../components/Icon.jsx'
 import ChannelForm from './ChannelForm.jsx'
 import { removeChannel as removeChannelFromStorage } from '../telegram/channelStorage.js'
 import { mediaFileUrl } from '../telegram/api.js'
-import { haptic, showConfirm } from '../telegram/webApp.js'
+import { haptic, showPopup } from '../telegram/webApp.js'
 
 // No header here on purpose — Telegram's own BackButton (wired up in
 // App.jsx) is what navigates back to the editor on this screen.
@@ -11,8 +11,15 @@ export default function SettingsScreen({ user, channels, onChannelsChanged }) {
   const initial = (user?.first_name || user?.username || '?').charAt(0).toUpperCase()
 
   async function removeChannel(channel) {
-    const ok = await showConfirm(`Remove ${channel.title} from your saved chats?`)
-    if (!ok) return
+    const pressed = await showPopup({
+      title: 'Remove channel',
+      message: `Remove "${channel.title}" from your saved chats? You'll need to verify the bot's admin rights again to add it back.`,
+      buttons: [
+        { id: 'remove', type: 'destructive', text: 'Remove' },
+        { id: 'cancel', type: 'cancel' }
+      ]
+    })
+    if (pressed !== 'remove') return
     try {
       await removeChannelFromStorage(channel.id)
       haptic('success')
