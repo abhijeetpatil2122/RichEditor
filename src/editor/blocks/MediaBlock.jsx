@@ -161,20 +161,12 @@ export default function MediaBlock({ block }) {
       )}
 
       {!uploading && (
-        <>
-          <input
-            className="media-caption-input"
-            placeholder="Caption (optional)"
-            value={block.caption}
-            onChange={(e) => updateBlock(block.id, { caption: e.target.value })}
-          />
-          <input
-            className="media-caption-input"
-            placeholder="Credit (optional)"
-            value={block.credit}
-            onChange={(e) => updateBlock(block.id, { credit: e.target.value })}
-          />
-        </>
+        <input
+          className="media-caption-input"
+          placeholder="Caption (optional)"
+          value={block.caption}
+          onChange={(e) => updateBlock(block.id, { caption: e.target.value })}
+        />
       )}
       <input
         ref={fileInputRef}
