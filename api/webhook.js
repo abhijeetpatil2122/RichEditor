@@ -1,21 +1,23 @@
 import { telegram, isWebhookAuthentic } from './_lib/telegram.js'
+import { getCommandMessage } from './_lib/botMessages.js'
 
-const APP_URL = process.env.APP_URL || ''
+const KNOWN_COMMANDS = new Set(['start', 'help', 'howtouse', 'about'])
 
 async function handleMessage(message) {
   const text = typeof message.text === 'string' ? message.text.trim() : ''
   if (message.chat?.type !== 'private' || !text.startsWith('/')) return
 
-  const command = text.split(/\s+/)[0].split('@')[0].toLowerCase()
-  if (command === '/start') {
-    await telegram('sendMessage', {
-      chat_id: message.chat.id,
-      text: '👋 Open the editor to build a Rich Message and post it to your channel.',
-      reply_markup: {
-        inline_keyboard: [[{ text: '✏️ Open editor', web_app: { url: APP_URL } }]]
-      }
-    })
-  }
+  const command = text.split(/\s+/)[0].slice(1).split('@')[0].toLowerCase()
+  if (!KNOWN_COMMANDS.has(command)) return
+
+  const reply = getCommandMessage(command)
+  if (!reply) return
+
+  await telegram('sendRichMessage', {
+    chat_id: message.chat.id,
+    rich_message: { blocks: reply.blocks },
+    ...(reply.reply_markup ? { reply_markup: reply.reply_markup } : {})
+  })
 }
 
 export default async function handler(req, res) {
