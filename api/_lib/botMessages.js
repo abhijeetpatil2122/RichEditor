@@ -77,6 +77,18 @@ const COMMANDS = {
           { type: '1', value: 3, blocks: [{ type: 'paragraph', text: 'Use the bottom toolbar to add blocks — text, headings, quotes, lists, tables, media, and more' }] },
           { type: '1', value: 4, blocks: [{ type: 'paragraph', text: 'Tap Send, then choose your chat with the bot to preview it, or the channel to post it' }] }
         ]
+      },
+      {
+        type: 'slideshow',
+        blocks: [
+          {
+            type: 'photo',
+            photo: {
+              type: 'photo',
+              media: 'https://image.zaw-myo.workers.dev/image/9aff7d19-5793-4599-944b-a3bcc65bec45'
+            }
+          }
+        ]
       }
     ],
     button: () => openEditorButton()
