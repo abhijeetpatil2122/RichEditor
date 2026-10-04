@@ -133,12 +133,6 @@ export default function MultiMediaBlock({ block }) {
         value={block.caption}
         onChange={(e) => updateBlock(block.id, { caption: e.target.value })}
       />
-      <input
-        className="media-caption-input"
-        placeholder="Credit (optional)"
-        value={block.credit}
-        onChange={(e) => updateBlock(block.id, { credit: e.target.value })}
-      />
     </div>
   )
 }
