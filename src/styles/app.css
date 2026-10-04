@@ -78,7 +78,9 @@
   border-radius: 7px;
   opacity: 0.85;
 }
-.block-controls .icon-btn.delete { color: var(--tg-theme-destructive-text-color); }
+/* Not scoped to .block-controls — this also covers the channel-remove
+   button in Settings, which was rendering in the default text color. */
+.icon-btn.delete { color: var(--tg-theme-destructive-text-color); }
 
 .rich-input {
   outline: none;
