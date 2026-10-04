@@ -65,8 +65,9 @@ rich-message-editor/
 └── api/
     ├── _lib/
     │   ├── telegram.js          Bot API HTTP/upload calls + initData HMAC verification
-    │   └── validateBlocks.js    re-validates the client-built blocks JSON before sending
-    ├── webhook.js               /start
+    │   ├── validateBlocks.js    re-validates the client-built blocks JSON before sending
+    │   └── botMessages.js       Rich Message content for /start, /help, /howtouse, /about
+    ├── webhook.js               routes bot commands to botMessages.js, sends via sendRichMessage
     ├── send.js                  sendRichMessage — re-verifies bot admin rights for channel targets
     ├── channels/
     │   └── verify.js            getChat + getChatMember only — nothing persisted server-side
@@ -77,81 +78,70 @@ rich-message-editor/
 
 ## This update
 
-**Backend crash fixed.** `api/send.js` imported `../_lib/telegram.js` but
-the file lives at `api/_lib/telegram.js` — one level up from
-`api/send.js`, not two. Vercel's bundler resolved it to a path outside
-`/var/task` entirely, hence `ERR_MODULE_NOT_FOUND`. Fixed to `./_lib/...`.
-(The files under `api/channels/` and `api/media/` already had the right
-`../_lib/...` since they're one directory deeper.)
+**Native destructive popup.** Removing a channel now uses
+`WebApp.showPopup` (Bot API 6.2+) with a `destructive`-type button instead
+of `showConfirm` — Telegram renders that button in its own native
+destructive color automatically (it's not part of our DOM, so there's no
+CSS variable to set on our end). See `showPopup` in `src/telegram/webApp.js`.
 
-**Storage moved to CloudStorage.** `@vercel/kv` and `api/channels/{list,add,remove}.js`
-are gone. `src/telegram/channelStorage.js` now saves/loads/removes
-channels directly from the Mini App via `window.Telegram.WebApp.CloudStorage`
-(same index-key + per-item-key pattern as your earlier repo) — nothing to
-provision, and it's per-user/per-bot permanent storage. `api/channels/verify.js`
-only checks the bot's admin rights and returns the channel; it saves
-nothing. `api/send.js` re-checks those same admin rights at send time
-instead of trusting a saved list, since that's the actual security
-boundary (the bot can only ever post where it's actually an admin).
+**Destructive color on the channel delete icon.** The CSS rule for it was
+accidentally scoped to `.block-controls .icon-btn.delete` (the per-block
+delete buttons in the editor) and never matched the Settings screen's
+channel-row delete button, which was falling back to plain text color.
+Now a plain `.icon-btn.delete` rule, so it applies everywhere.
 
-**Cursor/Enter bugs.** The real cause: `RichTextInput` was sanitizing and
-reassigning `innerHTML` on *every keystroke*. Reassigning `innerHTML` while
-a field is focused always collapses the cursor (the browser has no idea
-where your caret was inside content it didn't just render) — that's what
-"Enter jumps to start" and general cursor weirdness were. Fixed: typing
-no longer touches the DOM at all; sanitization only happens on blur/paste,
-when there's no caret to preserve. Enter is now handled explicitly (inserts
-a real `<br>` via the Range API) instead of letting the browser's default
-per-line-`<div>` behavior run — which the sanitizer was silently eating,
-causing the "no newline support" bug in quotes/paragraphs.
+**Removed media/map/collage caption "credit" field.** Added last round,
+but it was redundant with the existing caption — removed again; those
+blocks are back to a single caption field each. (Blockquote/pullquote's
+separate `credit` field is unrelated and unchanged — that's the attribution
+line under an actual quote, a different concept.)
 
-**Other bug fixes:**
-- Block delete/move buttons now sit in normal layout flow above each
-  block (always visible) instead of an absolutely-positioned, hover-only
-  overlay — that's what was making them vanish/overlap on touch.
-- Header/settings avatar is reliably round now (`appearance: none` on the
-  button reset — some Android WebViews ignore `border-radius` on a
-  `<button>` without it).
-- Checklist checkmark is bigger and bolder (was 12px/1.8 stroke, barely
-  visible at that size).
-- Removed the card/background box behind blockquotes and media+caption —
-  they're flush now, matching how Telegram actually renders them in-chat.
-- Settings screen no longer has its own header; the native `BackButton`
-  (already wired in `App.jsx`) handles navigation back to the editor.
-- `MainButton` is explicitly hidden when the editor screen unmounts
-  (navigating to Settings) — it has its own global state in Telegram and
-  doesn't hide itself just because the React component went away.
-- Native `SettingsButton` is now enabled and opens the Settings screen
-  (`configureSettingsButton` existed before but was never called).
+**Clear-formatting button hardened.** Couldn't fully pin down why it
+wasn't working from static review, so rather than guess, it now runs
+`execCommand('removeFormat')` first (the browser's own long-tested
+handling of standard tags) *and* the manual plain-text-replacement pass
+as a follow-up (needed anyway for the custom tags — sub/sup/mark/spoiler
+— which aren't "standard formatting" as far as `execCommand` is
+concerned). If it's still broken after this, the next report should say
+exactly what you selected and what happened — that'll narrow it down for
+real rather than another guess.
 
-**Inline formatting.** Bold/italic/etc. buttons are disabled unless you
-actually have text selected (tracked via `selectionchange`), there's a
-"clear formatting" button, and the caret is placed right after newly
-formatted text instead of being left in limbo. Added subscript,
-superscript, `marked` (highlight), and spoiler — all confirmed real
-`RichText` variants (see below).
+**Math rendering.** Added `katex` — the math block now renders live under
+the textarea as you type, using the same LaTeX that gets sent.
 
-**Icons.** Swapped the hand-drawn SVG set for `lucide-react`, still behind
-the same `<Icon name="..." />` API so nothing else had to change.
+**Bot commands.** `/start`, `/help`, `/howtouse`, `/about` now all exist,
+each replying via `sendRichMessage` (not plain `sendMessage`) through a
+new `api/_lib/botMessages.js` — kept deliberately separate from
+`api/send.js`, since that one is the Mini App's authenticated
+document-sending endpoint (initData, block validation, channel re-check)
+and these are just plain bot replies to whoever messaged it, no Mini App
+payload involved. Copy is placeholder-simple on purpose, per your "just
+the initial test command" ask — refine the wording whenever.
 
-**New block types**, added after checking the actual Bot API 10.3 type
-definitions (`@grammyjs/types`, which has the exact shapes — the public
-docs page is too large to fetch in one piece): preformatted/code block
-with a language picker, footer, collapsible blockquote with optional
-credit (confirmed: it takes `text` directly, not nested `blocks`, and has
-no open/closed field — it's always collapsed-until-tapped), details
-(`<summary>` + open-by-default toggle), raw-LaTeX math block, map (manual
-lat/lon/zoom/size — no interactive picker), and collage/slideshow (grid of
-photo/video items with one shared caption). Media blocks now also support
-GIF, audio, voice note, and generic file, all through the same
-upload-to-bot-chat round trip as photo/video.
+One assumption worth a curl check: `reply_markup` is sent as a top-level
+field alongside `rich_message` in the `sendRichMessage` call (same
+pattern every other `send*` method uses for attaching an inline
+keyboard). Not confirmed against a live call yet.
+
+**Register the commands with Telegram** so they show up in the client's
+command menu (run once, or again whenever `COMMAND_LIST` changes):
+
+```bash
+curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setMyCommands" \
+  -H 'content-type: application/json' \
+  -d '{"commands": [
+    {"command": "start", "description": "Open the Rich Message editor"},
+    {"command": "help", "description": "List available commands"},
+    {"command": "howtouse", "description": "Step-by-step walkthrough"},
+    {"command": "about", "description": "What this bot is"}
+  ]}' | jq
+```
 
 ## Still simplified / not built
 
 - Collage/slideshow items are photo/video only (no mixed captions per item).
 - `details` body is a single paragraph, not arbitrary nested blocks.
 - Map has no visual picker — it's raw number inputs.
-- Math block shows raw LaTeX text, doesn't render it visually in the editor.
 - No drag-and-drop reorder (up/down buttons only).
 - No i18n/RTL toggle.
 
