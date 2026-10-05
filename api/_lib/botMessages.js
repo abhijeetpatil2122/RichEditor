@@ -122,7 +122,7 @@ const COMMANDS = {
         type: 'video',
         video: {
           type: 'video',
-          media: 'https://image.zaw-myo.workers.dev/file/6f763e60-1e62-4946-bf3f-f037f3947d11'
+          media: 'https://image.zaw-myo.workers.dev/file/fcc023c9-3d4d-4cd5-887a-56a1fcb4a265'
         }
       },
       {
