@@ -119,6 +119,13 @@ const COMMANDS = {
     blocks: [
       { type: 'heading', size: 2, text: 'About' },
       {
+        type: 'video',
+        video: {
+          type: 'video',
+          media: 'https://image.zaw-myo.workers.dev/file/6f763e60-1e62-4946-bf3f-f037f3947d11'
+        }
+      },
+      {
         type: 'paragraph',
         text: 'A Telegram Mini App for creating and publishing 🆕 Rich Messages Post in channels with ease, without needing a Telegram Premium subscription.'
       }
