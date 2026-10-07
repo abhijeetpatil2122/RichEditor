@@ -51,6 +51,13 @@ const COMMANDS = {
   help: {
     blocks: [
       { type: 'heading', size: 2, text: 'Help' },
+      {
+        type: 'photo',
+        photo: {
+          type: 'photo',
+          media: 'https://image.zaw-myo.workers.dev/image/e2a78049-9326-48d3-9792-f64c81f6fc7c'
+        }
+      },
       { type: 'paragraph', text: 'Available commands:' },
       {
         type: 'list',
