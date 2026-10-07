@@ -31,6 +31,13 @@ const COMMANDS = {
     blocks: [
       { type: 'heading', size: 2, text: 'Welcome {name} to Rich Message Editor 👋' },
       {
+        type: 'photo',
+        photo: {
+          type: 'photo',
+          media: 'https://image.zaw-myo.workers.dev/image/98ee6d7b-0751-4d64-8da5-a748fe4d811e'
+        }
+      },
+      {
         type: 'paragraph',
         text: 'Build formatted posts — headings, quotes, lists, tables, media — right inside Bots Miniapp, and send them straight to a channel.'
       },
