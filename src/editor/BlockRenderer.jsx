@@ -16,7 +16,7 @@ import MathBlock from './blocks/MathBlock.jsx'
 import MapBlock from './blocks/MapBlock.jsx'
 import MediaBlock from './blocks/MediaBlock.jsx'
 import MultiMediaBlock from './blocks/MultiMediaBlock.jsx'
-import ButtonsBlock from './blocks/ButtonBlock.jsx'
+import ButtonsBlock from './blocks/ButtonsBlock.jsx'
 
 const COMPONENTS = {
   [BLOCK.PARAGRAPH]: ParagraphBlock,
