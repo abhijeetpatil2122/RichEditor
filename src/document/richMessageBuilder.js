@@ -24,6 +24,25 @@ const INLINE_TAG_TO_TYPE = {
   MARK: 'marked'
 }
 
+/** { text, style, actionType, dest } -> a RichMessageButton (shared by the inline Rich Button span and the Buttons block). */
+function buildRichMessageButton({ text, style, actionType, dest }) {
+  const out = { text: text || '' }
+  if (style) out.style = style
+  switch (actionType) {
+    case 'url':
+      out.url = dest || ''
+      break
+    case 'web_app':
+      out.web_app = { url: dest || '' }
+      break
+    case 'callback':
+    default:
+      out.callback_data = dest || ''
+      break
+  }
+  return out
+}
+
 /** Recursively turn a DOM node into a Telegram RichText value (string | array | {type,text,...}). */
 function nodeToRichText(node) {
   if (node.nodeType === Node.TEXT_NODE) return node.textContent
@@ -39,6 +58,19 @@ function nodeToRichText(node) {
   }
   if (tag === 'SPAN' && node.getAttribute('data-spoiler') === 'true') {
     return { type: 'spoiler', text: inner }
+  }
+  if (tag === 'SPAN' && node.getAttribute('data-inline-math') === 'true') {
+    // Raw expression string, not nested RichText — per the API spec.
+    return { type: 'mathematical_expression', expression: node.textContent.trim() }
+  }
+  if (tag === 'SPAN' && node.getAttribute('data-rich-button') === 'true') {
+    const button = buildRichMessageButton({
+      text: node.textContent.trim(),
+      style: node.getAttribute('data-style') || undefined,
+      actionType: node.getAttribute('data-action-type'),
+      dest: node.getAttribute('data-dest')
+    })
+    return { type: 'button', button }
   }
   const mark = INLINE_TAG_TO_TYPE[tag]
   if (mark) return { type: mark, text: inner }
@@ -63,6 +95,12 @@ function paragraphFromHtml(html) {
 function buildCaption(html) {
   const text = htmlToRichText(html)
   return text === '' ? undefined : { text }
+}
+
+/** Optional RichText field (credit lines) — undefined when empty, otherwise full inline formatting. */
+function buildOptionalRichText(html) {
+  if (!plainText(html).trim()) return undefined
+  return htmlToRichText(html)
 }
 
 function buildListItem(item, style, index) {
@@ -131,7 +169,8 @@ function buildBlock(block) {
 
     case BLOCK.BLOCKQUOTE: {
       const out = { type: 'blockquote', blocks: [paragraphFromHtml(block.html)] }
-      if (block.credit?.trim()) out.credit = block.credit.trim()
+      const credit = buildOptionalRichText(block.creditHtml)
+      if (credit !== undefined) out.credit = credit
       return out
     }
 
@@ -139,13 +178,15 @@ function buildBlock(block) {
       // Unlike `blockquote`, this takes `text` directly (not nested
       // `blocks`) — and always renders collapsed until tapped.
       const out = { type: 'expandable_blockquote', text: htmlToRichText(block.html) }
-      if (block.credit?.trim()) out.credit = block.credit.trim()
+      const credit = buildOptionalRichText(block.creditHtml)
+      if (credit !== undefined) out.credit = credit
       return out
     }
 
     case BLOCK.PULLQUOTE: {
       const out = { type: 'pullquote', text: htmlToRichText(block.html) }
-      if (block.credit?.trim()) out.credit = block.credit.trim()
+      const credit = buildOptionalRichText(block.creditHtml)
+      if (credit !== undefined) out.credit = credit
       return out
     }
 
@@ -200,6 +241,12 @@ function buildBlock(block) {
       const caption = buildCaption(block.caption)
       if (caption) out.caption = caption
       return out
+    }
+
+    case BLOCK.BUTTONS: {
+      const buttons = block.buttons.filter((b) => b.text.trim() && b.dest.trim()).map(buildRichMessageButton)
+      if (!buttons.length) return null
+      return { type: 'buttons', buttons, align: block.align }
     }
 
     default:
