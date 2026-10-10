@@ -17,11 +17,14 @@ export default function BlockquoteBlock({ block, activeInputRef }) {
           placeholder="Quote"
           activeInputRef={activeInputRef}
         />
-        <input
-          className="credit-input"
+        {/* credit supports the same inline formatting as the quote itself — confirmed `credit?: RichText` in the API */}
+        <RichTextInput
+          html={block.creditHtml}
+          multiline={false}
+          onChange={(creditHtml) => updateBlock(block.id, { creditHtml })}
           placeholder="Credit (optional)"
-          value={block.credit}
-          onChange={(e) => updateBlock(block.id, { credit: e.target.value })}
+          className="credit-input"
+          activeInputRef={activeInputRef}
         />
         {isExpandable && <div className="expand-toggle">Shown collapsed in chat until the reader taps it</div>}
       </div>
