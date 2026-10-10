@@ -13,7 +13,7 @@ export default function SettingsScreen({ user, channels, onChannelsChanged }) {
   async function removeChannel(channel) {
     const pressed = await showPopup({
       title: 'Remove channel',
-      message: `Remove "${channel.title}" from your saved chats? You'll need to verify the bot's admin rights again to add it back.`,
+      message: `Remove "${channel.title}" from your saved chats? You'll need to verify it again to add it back.`,
       buttons: [
         { id: 'remove', type: 'destructive', text: 'Remove' },
         { id: 'cancel', type: 'cancel' }
@@ -54,7 +54,11 @@ export default function SettingsScreen({ user, channels, onChannelsChanged }) {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="name">{ch.title}</div>
-                {ch.username && <div className="username">@{ch.username}</div>}
+                <div className="username">
+                  {ch.username ? `@${ch.username}` : ''}
+                  {ch.username && ch.type ? ' · ' : ''}
+                  {ch.type === 'channel' ? 'Channel' : ch.type === 'supergroup' ? 'Group' : ch.type === 'group' ? 'Group' : ''}
+                </div>
               </div>
               <button className="icon-btn delete" type="button" onClick={() => removeChannel(ch)} aria-label="Remove">
                 <Icon name="trash" size={16} />
