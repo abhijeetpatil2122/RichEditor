@@ -1,10 +1,11 @@
 import React from 'react'
 import Icon from '../../components/Icon.jsx'
+import RichTextInput from './shared/RichTextInput.jsx'
 import { useDocument } from '../../store/DocumentContext.jsx'
 
 const ALIGNS = ['left', 'center', 'right']
 
-export default function TableBlock({ block }) {
+export default function TableBlock({ block, activeInputRef }) {
   const {
     updateTableCell,
     addTableRow,
@@ -36,14 +37,14 @@ export default function TableBlock({ block }) {
                 {row.map((cell, colIndex) => {
                   const Tag = cell.isHeader ? 'th' : 'td'
                   return (
-                    <Tag
-                      key={colIndex}
-                      style={{ textAlign: block.align[colIndex] || 'left' }}
-                      contentEditable
-                      suppressContentEditableWarning
-                      onBlur={(e) => updateTableCell(block.id, rowIndex, colIndex, { text: e.currentTarget.textContent })}
-                    >
-                      {cell.text}
+                    <Tag key={colIndex} style={{ textAlign: block.align[colIndex] || 'left' }}>
+                      <RichTextInput
+                        html={cell.text}
+                        multiline={false}
+                        placeholder=""
+                        onChange={(text) => updateTableCell(block.id, rowIndex, colIndex, { text })}
+                        activeInputRef={activeInputRef}
+                      />
                     </Tag>
                   )
                 })}
