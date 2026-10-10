@@ -5,7 +5,8 @@ import {
   Music2, FileText, Mic, LayoutGrid, GalleryHorizontal, Table, PanelBottomOpen,
   Sigma, MapPin, Minus, X, Send, Trash2, Plus, ChevronUp, ChevronDown, ChevronRight,
   Check, AlertCircle, Upload, LoaderCircle, Bold, Italic, Underline, Strikethrough,
-  Code, Link2, Subscript, Superscript, Highlighter, EyeOff, RemoveFormatting, RefreshCw
+  Code, Link2, Subscript, Superscript, Highlighter, EyeOff, RemoveFormatting, RefreshCw,
+  SquareMousePointer, ExternalLink, Webhook, AppWindow, AlignLeft, AlignCenter, AlignRight, Pencil
 } from 'lucide-react'
 
 // Thin name -> Lucide-component lookup so the rest of the app keeps using
@@ -60,7 +61,15 @@ const ICONS = {
   marked: Highlighter,
   spoiler: EyeOff,
   'clear-format': RemoveFormatting,
-  swap: RefreshCw
+  swap: RefreshCw,
+  buttons: SquareMousePointer,
+  'action-url': ExternalLink,
+  'action-callback': Webhook,
+  'action-web_app': AppWindow,
+  'align-left': AlignLeft,
+  'align-center': AlignCenter,
+  'align-right': AlignRight,
+  edit: Pencil
 }
 
 export default function Icon({ name, size = 20, strokeWidth = 1.8, className = '', style }) {
