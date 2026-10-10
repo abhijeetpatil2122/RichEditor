@@ -5,17 +5,38 @@
 
 const RICH_TEXT_TYPES = new Set([
   'bold', 'italic', 'underline', 'strikethrough', 'code', 'url',
-  'subscript', 'superscript', 'marked', 'spoiler'
+  'subscript', 'superscript', 'marked', 'spoiler',
+  'mathematical_expression', // inline math — note: uses `expression`, not `text` (checked separately below)
+  'button' // Rich Button — note: uses `button`, not `text` (checked separately below)
 ])
+
+const BUTTON_STYLES = new Set(['primary', 'success', 'danger', 'link'])
 
 const MEDIA_BLOCK_TYPES = new Set(['photo', 'video', 'animation', 'audio', 'document', 'voice_note'])
 
 const BLOCK_TYPES = new Set([
   'paragraph', 'heading', 'pre', 'footer', 'list', 'blockquote',
   'expandable_blockquote', 'pullquote', 'table', 'details', 'divider',
-  'mathematical_expression', 'map', 'collage', 'slideshow',
+  'mathematical_expression', 'map', 'collage', 'slideshow', 'buttons',
   ...MEDIA_BLOCK_TYPES
 ])
+
+function checkRichMessageButton(button) {
+  if (!button || typeof button !== 'object') throw new Error('Invalid button.')
+  checkRichText(button.text)
+  if (button.style !== undefined && !BUTTON_STYLES.has(button.style)) throw new Error('Invalid button style.')
+  const actionFields = ['url', 'callback_data', 'web_app'].filter((k) => button[k] !== undefined)
+  if (actionFields.length !== 1) throw new Error('A button needs exactly one action (url, callback_data, or web_app).')
+  if (button.url !== undefined && (typeof button.url !== 'string' || !/^(https?:|tg:)\/\//i.test(button.url))) {
+    throw new Error('Button URLs must use http(s):// or tg://.')
+  }
+  if (button.callback_data !== undefined && (typeof button.callback_data !== 'string' || button.callback_data.length > 64)) {
+    throw new Error('Invalid button callback data.')
+  }
+  if (button.web_app !== undefined && (typeof button.web_app.url !== 'string' || !button.web_app.url)) {
+    throw new Error('Invalid button Mini App URL.')
+  }
+}
 
 function checkRichText(value, depth = 0) {
   if (depth > 12) throw new Error('Rich text is nested too deeply.')
@@ -30,6 +51,15 @@ function checkRichText(value, depth = 0) {
   }
   if (!value || typeof value !== 'object' || !RICH_TEXT_TYPES.has(value.type)) {
     throw new Error('Unsupported inline formatting.')
+  }
+  if (value.type === 'mathematical_expression') {
+    if (typeof value.expression !== 'string' || !value.expression || value.expression.length > 4000) {
+      throw new Error('Invalid inline math expression.')
+    }
+    return
+  }
+  if (value.type === 'button') {
+    return checkRichMessageButton(value.button)
   }
   checkRichText(value.text, depth + 1)
   if (value.type === 'url') {
@@ -132,6 +162,15 @@ function checkBlock(block, depth = 0) {
       }
       block.blocks.forEach((b) => checkBlock(b, depth + 1))
       checkCaption(block.caption)
+      return
+    case 'buttons':
+      if (!Array.isArray(block.buttons) || !block.buttons.length || block.buttons.length > 20) {
+        throw new Error('Invalid buttons block.')
+      }
+      block.buttons.forEach(checkRichMessageButton)
+      if (block.align !== undefined && !['left', 'center', 'right'].includes(block.align)) {
+        throw new Error('Invalid buttons alignment.')
+      }
       return
   }
 }
