@@ -16,6 +16,7 @@ import MathBlock from './blocks/MathBlock.jsx'
 import MapBlock from './blocks/MapBlock.jsx'
 import MediaBlock from './blocks/MediaBlock.jsx'
 import MultiMediaBlock from './blocks/MultiMediaBlock.jsx'
+import ButtonsBlock from './blocks/ButtonsBlock.jsx'
 
 const COMPONENTS = {
   [BLOCK.PARAGRAPH]: ParagraphBlock,
@@ -32,7 +33,8 @@ const COMPONENTS = {
   [BLOCK.MATH]: MathBlock,
   [BLOCK.MAP]: MapBlock,
   [BLOCK.MEDIA]: MediaBlock,
-  [BLOCK.MULTI_MEDIA]: MultiMediaBlock
+  [BLOCK.MULTI_MEDIA]: MultiMediaBlock,
+  [BLOCK.BUTTONS]: ButtonsBlock
 }
 
 export default function BlockRenderer({ block, index, total, activeInputRef }) {
