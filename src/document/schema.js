@@ -19,8 +19,12 @@ export const BLOCK = Object.freeze({
   MATH: 'math',
   MAP: 'map',
   MEDIA: 'media',
-  MULTI_MEDIA: 'multi_media' // collage or slideshow — see `layout` field
+  MULTI_MEDIA: 'multi_media', // collage or slideshow — see `layout` field
+  BUTTONS: 'buttons'
 })
+
+export const BUTTON_STYLES = ['primary', 'success', 'danger', 'link']
+export const BUTTON_ACTION_TYPES = ['url', 'callback', 'web_app']
 
 export const LIST_STYLE = Object.freeze({
   BULLET: 'bullet',
@@ -47,13 +51,25 @@ export function createMediaItem(kind = 'photo', overrides = {}) {
   return { id: uid('mi'), kind, source: null, ...overrides }
 }
 
+/** A single button — used both by the inline Rich Button span and the block-level Buttons row. */
+export function createButtonConfig(overrides = {}) {
+  return {
+    id: uid('btn'),
+    text: '',
+    style: 'primary', // 'primary' | 'success' | 'danger' | 'link' ('link' is only valid for callback buttons)
+    actionType: 'url', // 'url' | 'callback' | 'web_app'
+    dest: '', // the url, callback_data, or web_app url, depending on actionType
+    ...overrides
+  }
+}
+
 export function createBlock(type, overrides = {}) {
   const id = uid(type)
   switch (type) {
     case BLOCK.PARAGRAPH:
       return { id, type, html: emptyRich(), ...overrides }
     case BLOCK.HEADING:
-      return { id, type, html: emptyRich(), size: overrides.size || 2, ...overrides }
+      return { id, type, html: emptyRich(), size: overrides.size || 1, ...overrides }
     case BLOCK.PREFORMATTED:
       return { id, type, code: '', language: overrides.language || 'plaintext', ...overrides }
     case BLOCK.FOOTER:
@@ -69,12 +85,12 @@ export function createBlock(type, overrides = {}) {
         ...overrides
       }
     case BLOCK.BLOCKQUOTE:
-      return { id, type, html: emptyRich(), credit: '', ...overrides }
+      return { id, type, html: emptyRich(), creditHtml: emptyRich(), ...overrides }
     case BLOCK.EXPANDABLE_BLOCKQUOTE:
       // Always renders collapsed-until-tapped — Telegram has no "default open" option for this one.
-      return { id, type, html: emptyRich(), credit: '', ...overrides }
+      return { id, type, html: emptyRich(), creditHtml: emptyRich(), ...overrides }
     case BLOCK.PULLQUOTE:
-      return { id, type, html: emptyRich(), credit: '', ...overrides }
+      return { id, type, html: emptyRich(), creditHtml: emptyRich(), ...overrides }
     case BLOCK.TABLE:
       return {
         id,
@@ -123,6 +139,8 @@ export function createBlock(type, overrides = {}) {
         caption: '',
         ...overrides
       }
+    case BLOCK.BUTTONS:
+      return { id, type, align: overrides.align || 'left', buttons: overrides.buttons?.length ? overrides.buttons : [createButtonConfig()] }
     default:
       throw new Error(`Unknown block type: ${type}`)
   }
@@ -144,6 +162,8 @@ export function isDocumentEmpty(doc) {
         return !b.source
       case BLOCK.MULTI_MEDIA:
         return b.items.every((i) => !i.source)
+      case BLOCK.BUTTONS:
+        return b.buttons.every((btn) => !btn.text.trim() || !btn.dest.trim())
       case BLOCK.MAP:
         return !b.latitude || !b.longitude
       case BLOCK.MATH:
