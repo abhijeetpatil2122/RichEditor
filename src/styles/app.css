@@ -218,16 +218,17 @@
 .rich-table.compact td, .rich-table.compact th { padding: 4px 6px; }
 .rich-table td, .rich-table th { padding: 8px 10px; min-width: 72px; }
 .rich-table th { background: var(--tg-theme-secondary-bg-color); font-weight: 600; }
-.rich-table [contenteditable] { outline: none; min-width: 40px; }
+.rich-table .rich-input { min-width: 40px; white-space: normal; }
 .table-toolbar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.table-toolbar .chip {
+/* Generic small pill button — reused outside the table toolbar too (e.g. the Buttons block's alignment row). */
+.chip {
   font-size: 12px;
   padding: 4px 9px;
   border-radius: 20px;
   background: var(--tg-theme-secondary-bg-color);
   color: var(--tg-theme-hint-color);
 }
-.table-toolbar .chip.active { background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); }
+.chip.active { background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); }
 .table-caption-input {
   width: 100%;
   font-size: 12px;
@@ -527,7 +528,8 @@
   background: var(--tg-theme-bg-color);
   font-size: 14px;
 }
-.channel-form .add-btn {
+/* Generic filled pill button — also used by ButtonEditorSheet. */
+.add-btn {
   align-self: flex-start;
   font-size: 13px;
   font-weight: 600;
@@ -536,7 +538,7 @@
   padding: 8px 14px;
   border-radius: 20px;
 }
-.channel-form .add-btn:disabled { opacity: 0.5; }
+.add-btn:disabled { opacity: 0.5; }
 .channel-form .hint {
   font-size: 12px;
   color: var(--tg-theme-hint-color);
@@ -736,3 +738,111 @@
   border-radius: 20px;
   margin-left: 4px;
 }
+
+/* ---------- Inline math span ---------- */
+.rich-input span[data-inline-math='true'] {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  background: color-mix(in srgb, var(--tg-theme-accent-text-color) 14%, transparent);
+  color: var(--tg-theme-accent-text-color);
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+/* ---------- Inline Rich Button span (shown inline, inside running text) ---------- */
+.rich-input span[data-rich-button='true'] {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.85em;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 20px;
+  margin: 0 1px;
+}
+.rich-input span[data-rich-button='true'][data-style='primary'] { background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); }
+.rich-input span[data-rich-button='true'][data-style='success'] { background: var(--success-color); color: #fff; }
+.rich-input span[data-rich-button='true'][data-style='danger'] { background: var(--error-color); color: #fff; }
+.rich-input span[data-rich-button='true'][data-style='link'] { background: transparent; color: var(--tg-theme-link-color); text-decoration: underline; padding: 0; }
+
+/* ---------- Buttons block (block-level row) ---------- */
+.buttons-block { display: flex; flex-direction: column; gap: 8px; }
+.align-row { display: flex; gap: 4px; }
+.align-row .chip { display: flex; align-items: center; justify-content: center; width: 30px; padding: 5px 0; }
+.buttons-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.buttons-row.align-left { justify-content: flex-start; }
+.buttons-row.align-center { justify-content: center; }
+.buttons-row.align-right { justify-content: flex-end; }
+.buttons-empty { font-size: 13px; color: var(--tg-theme-hint-color); }
+
+.rich-button-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+.rich-button-pill.primary { background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); }
+.rich-button-pill.success { background: var(--success-color); color: #fff; }
+.rich-button-pill.danger { background: var(--error-color); color: #fff; }
+.rich-button-pill.link { background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-link-color); }
+.rich-button-remove {
+  display: flex;
+  margin-left: 2px;
+  opacity: 0.75;
+}
+.buttons-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px dashed color-mix(in srgb, var(--tg-theme-hint-color) 35%, transparent);
+  color: var(--tg-theme-hint-color);
+}
+
+/* ---------- Button editor sheet ---------- */
+.button-editor { display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
+.button-editor label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--tg-theme-hint-color);
+  margin-top: 8px;
+}
+.button-editor input {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--tg-theme-hint-color) 32%, transparent);
+  background: transparent;
+  font-size: 14px;
+  color: var(--tg-theme-text-color);
+}
+.pill-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.style-pill, .action-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: var(--tg-theme-secondary-bg-color);
+  color: var(--tg-theme-hint-color);
+  text-transform: capitalize;
+}
+.style-pill:disabled { opacity: 0.35; }
+.style-pill.active.primary { background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); }
+.style-pill.active.success { background: var(--success-color); color: #fff; }
+.style-pill.active.danger { background: var(--error-color); color: #fff; }
+.style-pill.active.link { background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-link-color); text-decoration: underline; }
+.action-pill.active { background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); }
