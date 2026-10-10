@@ -51,10 +51,12 @@ rich-message-editor/
 │   │       ├── MapBlock.jsx            manual lat/lon/zoom/size inputs
 │   │       ├── MediaBlock.jsx          photo/video/gif/audio/voice/file — paste-URL or upload, swappable
 │   │       ├── MultiMediaBlock.jsx     collage / slideshow grid with one shared caption
+│   │       ├── ButtonsBlock.jsx        block-level button row (left/center/right align)
 │   │       └── shared/
 │   │           ├── RichTextInput.jsx        contenteditable field — see "cursor bugs" below
-│   │           ├── sanitizeInlineHtml.js    whitelists inline tags incl. sub/sup/mark/spoiler
-│   │           └── useMediaUpload.js        shared upload-to-bot helper
+│   │           ├── sanitizeInlineHtml.js    whitelists inline tags incl. sub/sup/mark/spoiler/inline-math/rich-button
+│   │           ├── useMediaUpload.js        shared cancellable upload-to-bot helper
+│   │           └── ButtonEditorSheet.jsx    text/style/action-type form, used by both button features below
 │   ├── settings/
 │   │   ├── SettingsScreen.jsx   profile card + saved-channels list (no in-app header — native BackButton)
 │   │   └── ChannelForm.jsx      verify (server) + save (CloudStorage)
@@ -66,11 +68,12 @@ rich-message-editor/
     ├── _lib/
     │   ├── telegram.js          Bot API HTTP/upload calls + initData HMAC verification
     │   ├── validateBlocks.js    re-validates the client-built blocks JSON before sending
+    │   ├── chatAccess.js        shared "can the bot actually send here" check (channel admin vs group/supergroup member rules)
     │   └── botMessages.js       Rich Message content for /start, /help, /howtouse, /about
     ├── webhook.js               routes bot commands to botMessages.js, sends via sendRichMessage
-    ├── send.js                  sendRichMessage — re-verifies bot admin rights for channel targets
+    ├── send.js                  sendRichMessage — re-verifies send rights for channel/group targets
     ├── channels/
-    │   └── verify.js            getChat + getChatMember only — nothing persisted server-side
+    │   └── verify.js            getChat + getChatMember only (channel, group, or supergroup) — nothing persisted server-side
     └── media/
         ├── upload.js            uploads to the user's own chat, returns a file_id (all media kinds)
         └── file.js              proxies a file_id to raw bytes for <img>/<video> src
@@ -78,68 +81,63 @@ rich-message-editor/
 
 ## This update
 
-**Native destructive popup.** Removing a channel now uses
-`WebApp.showPopup` (Bot API 6.2+) with a `destructive`-type button instead
-of `showConfirm` — Telegram renders that button in its own native
-destructive color automatically (it's not part of our DOM, so there's no
-CSS variable to set on our end). See `showPopup` in `src/telegram/webApp.js`.
+**Group & supergroup support**, not just channels. `api/channels/verify.js`
+and `api/send.js` both now branch on `chat.type`: channels still need the
+bot to be admin with "Post messages" rights (only admins can post in a
+channel at all); groups/supergroups just need the bot to be a member and
+not explicitly restricted from sending — that's the real permission model,
+not an arbitrary relaxation. The shared check lives in
+`api/_lib/chatAccess.js` so both endpoints can't drift apart. Settings now
+shows "Channel" / "Group" next to each saved chat.
 
-**Destructive color on the channel delete icon.** The CSS rule for it was
-accidentally scoped to `.block-controls .icon-btn.delete` (the per-block
-delete buttons in the editor) and never matched the Settings screen's
-channel-row delete button, which was falling back to plain text color.
-Now a plain `.icon-btn.delete` rule, so it applies everywhere.
+**Quote/pullquote credit now supports inline formatting.** Confirmed
+`credit?: RichText` (not plain string) in the type definitions — it was
+rendered as a plain `<input>` before, so formatting could never reach it.
+Renamed the field `creditHtml` and swapped in the same `RichTextInput`
+everything else uses.
 
-**Removed media/map/collage caption "credit" field.** Added last round,
-but it was redundant with the existing caption — removed again; those
-blocks are back to a single caption field each. (Blockquote/pullquote's
-separate `credit` field is unrelated and unchanged — that's the attribution
-line under an actual quote, a different concept.)
+**Table cells support inline formatting too**, same fix, same component.
+This incidentally fixes a real bug: cells were raw uncontrolled
+`contentEditable` elements synced only on blur, so toggling Striped/
+Bordered/Compact while a cell was still focus — before you'd blurred out
+of it — re-rendered the table with each cell's last-*saved* content,
+silently discarding whatever you'd just typed. `RichTextInput` already
+never touches the DOM while focused, so cells get that fix for free now.
 
-**Clear-formatting button hardened.** Couldn't fully pin down why it
-wasn't working from static review, so rather than guess, it now runs
-`execCommand('removeFormat')` first (the browser's own long-tested
-handling of standard tags) *and* the manual plain-text-replacement pass
-as a follow-up (needed anyway for the custom tags — sub/sup/mark/spoiler
-— which aren't "standard formatting" as far as `execCommand` is
-concerned). If it's still broken after this, the next report should say
-exactly what you selected and what happened — that'll narrow it down for
-real rather than another guess.
+**Inline math.** `{type: 'mathematical_expression', expression}` — the
+*other* math type referenced in the docs, separate from the block-level
+one added earlier. Select some LaTeX source text and tap the inline math
+mark to convert it; shown as a styled (not live-rendered) span inline —
+rendering it live inside running contenteditable text is a materially
+harder problem than the block-level preview, not attempted here.
 
-**Math rendering.** Added `katex` — the math block now renders live under
-the textarea as you type, using the same LaTeX that gets sent.
+**Rich Button (inline) and Buttons block — both added.** Per the API,
+these are genuinely different things sharing one button shape
+(`{text, style, url | callback_data | web_app}`, `style` one of
+primary/success/danger/link — note "link" is only valid on callback
+buttons, the form disables it otherwise):
+- *Rich Button*: an inline mark, usable mid-sentence. Tapping it inserts a
+  placeholder at the cursor immediately (while the field still has focus —
+  see the code comment in `RichTextInput.jsx` for why that timing matters)
+  and opens a form to fill in label/style/action/destination; Save or
+  Cancel updates or removes that placeholder by its id.
+- *Buttons block*: a standalone row, 1+ buttons, left/center/right aligned.
+Both reuse the same `ButtonEditorSheet` component, so there's one form to
+maintain instead of two.
 
-**Bot commands.** `/start`, `/help`, `/howtouse`, `/about` now all exist,
-each replying via `sendRichMessage` (not plain `sendMessage`) through a
-new `api/_lib/botMessages.js` — kept deliberately separate from
-`api/send.js`, since that one is the Mini App's authenticated
-document-sending endpoint (initData, block validation, channel re-check)
-and these are just plain bot replies to whoever messaged it, no Mini App
-payload involved. Copy is placeholder-simple on purpose, per your "just
-the initial test command" ask — refine the wording whenever.
+**Heading default was H2, now H1** — `toolbarConfig.js` was passing
+`{ size: 2 }` to the new-heading button.
 
-One assumption worth a curl check: `reply_markup` is sent as a top-level
-field alongside `rich_message` in the `sendRichMessage` call (same
-pattern every other `send*` method uses for attaching an inline
-keyboard). Not confirmed against a live call yet.
+**Destructive popup** (last round's item) and the **clear-formatting
+button** you confirmed is now working — no changes needed there.
 
-**Register the commands with Telegram** so they show up in the client's
-command menu (run once, or again whenever `COMMAND_LIST` changes):
-
-```bash
-curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setMyCommands" \
-  -H 'content-type: application/json' \
-  -d '{"commands": [
-    {"command": "start", "description": "Open the Rich Message editor"},
-    {"command": "help", "description": "List available commands"},
-    {"command": "howtouse", "description": "Step-by-step walkthrough"},
-    {"command": "about", "description": "What this bot is"}
-  ]}' | jq
-```
+**Removed the media/map/collage caption "credit" field** added two
+rounds ago — redundant with caption, reverted, as asked.
 
 ## Still simplified / not built
 
 - Collage/slideshow items are photo/video only (no mixed captions per item).
+- Rich Button / Buttons block only support url, callback_data, and web_app actions — not login_url, switch_inline*, or copy_text (all real but niche).
 - `details` body is a single paragraph, not arbitrary nested blocks.
 - Map has no visual picker — it's raw number inputs.
 - No drag-and-drop reorder (up/down buttons only).
