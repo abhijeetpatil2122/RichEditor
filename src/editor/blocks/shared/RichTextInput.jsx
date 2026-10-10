@@ -149,6 +149,62 @@ export function applyInlineMark(container, tagName, attrs = {}) {
 }
 
 /**
+ * Inserts a placeholder Rich Button span at the current selection (this
+ * runs synchronously on tap, while the field is still focused and the
+ * Selection/Range is still valid — see ButtonEditorSheet's usage for why
+ * this can't wait until the sheet's own "Save" button is pressed: opening
+ * the sheet and focusing its inputs blurs this field first, which runs
+ * sanitize-on-blur and can invalidate a Range captured earlier). Returns
+ * the pending id to look the span back up by later, or null if there's
+ * nowhere to insert it.
+ */
+export function insertRichButtonPlaceholder(container, text) {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0) return null
+  const range = selection.getRangeAt(0)
+  if (!container.contains(range.commonAncestorContainer)) return null
+
+  const pendingId = `pb_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  range.deleteContents()
+  const el = document.createElement('SPAN')
+  el.setAttribute('data-rich-button', 'true')
+  el.setAttribute('data-pending-id', pendingId)
+  el.setAttribute('data-style', 'primary')
+  el.setAttribute('data-action-type', 'url')
+  el.setAttribute('data-dest', '')
+  el.textContent = text || 'Button'
+  range.insertNode(el)
+  placeCaretAfterNode(selection, el)
+  return pendingId
+}
+
+/** Finds a pending Rich Button span anywhere in the editor canvas by its id. */
+function findPendingButton(pendingId) {
+  return document.querySelector(`span[data-pending-id="${pendingId}"]`)
+}
+
+/** Fills in a pending Rich Button's real config and clears its pending marker, saving the change. */
+export function finalizeRichButton(pendingId, { text, style, actionType, dest }) {
+  const span = findPendingButton(pendingId)
+  if (!span) return
+  span.setAttribute('data-style', style)
+  span.setAttribute('data-action-type', actionType)
+  span.setAttribute('data-dest', dest)
+  span.removeAttribute('data-pending-id')
+  span.textContent = text
+  span.closest('[contenteditable]')?.dispatchEvent(new Event('input', { bubbles: true }))
+}
+
+/** Removes a pending Rich Button span entirely (the sheet was dismissed without saving). */
+export function cancelRichButton(pendingId) {
+  const span = findPendingButton(pendingId)
+  if (!span) return
+  const container = span.closest('[contenteditable]')
+  span.remove()
+  container?.dispatchEvent(new Event('input', { bubbles: true }))
+}
+
+/**
  * Strips all inline formatting from the current selection back to plain
  * text. Runs execCommand('removeFormat') first — the browser's own
  * built-in, battle-tested handling of the standard tags — then does a
