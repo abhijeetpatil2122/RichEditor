@@ -30,17 +30,17 @@ export default function ChannelForm({ onAdded }) {
   return (
     <div className="channel-form">
       <input
-        placeholder="@channelusername or -100123456789"
+        placeholder="@username or -100123456789"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && submit()}
       />
       {error && <div className="form-error">{error}</div>}
       <button className="add-btn" type="button" onClick={submit} disabled={busy || !value.trim()}>
-        {busy ? 'Verifying…' : 'Add channel'}
+        {busy ? 'Verifying…' : 'Add'}
       </button>
       <div className="hint">
-        Add the bot as an admin in the channel first, with permission to post messages — then add it here to verify.
+        Channels: add the bot as admin with permission to post. Groups/supergroups: just add the bot as a member — then add it here to verify.
       </div>
     </div>
   )
