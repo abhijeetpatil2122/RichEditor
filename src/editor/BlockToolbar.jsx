@@ -1,15 +1,25 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import { useDocument } from '../store/DocumentContext.jsx'
 import { TOOLBAR_CATEGORIES, INLINE_MARKS } from '../document/toolbarConfig.js'
-import { applyInlineMark, clearInlineMarks, hasActiveSelection } from './blocks/shared/RichTextInput.jsx'
+import {
+  applyInlineMark,
+  clearInlineMarks,
+  hasActiveSelection,
+  insertRichButtonPlaceholder,
+  finalizeRichButton,
+  cancelRichButton
+} from './blocks/shared/RichTextInput.jsx'
+import ButtonEditorSheet from './blocks/shared/ButtonEditorSheet.jsx'
 
 export default function BlockToolbar({ activeInputRef, lastBlockId }) {
   const { addBlock } = useDocument()
   const [selectionActive, setSelectionActive] = useState(false)
+  const [buttonSheet, setButtonSheet] = useState(null) // { pendingId, initial } | null
 
   // Inline-mark buttons only make sense once some text is actually
-  // selected — otherwise "bold" has nothing to apply to.
+  // selected — otherwise "bold" has nothing to apply to. The Rich Button
+  // mark is the one exception (see handleMark).
   useEffect(() => {
     function onSelectionChange() {
       setSelectionActive(hasActiveSelection(activeInputRef.current))
@@ -20,7 +30,19 @@ export default function BlockToolbar({ activeInputRef, lastBlockId }) {
 
   function handleMark(mark) {
     const el = activeInputRef.current
-    if (!el || !hasActiveSelection(el)) return
+    if (!el) return
+
+    if (mark.isButton) {
+      const selection = window.getSelection()
+      const label = selection && !selection.isCollapsed ? selection.toString() : ''
+      const pendingId = insertRichButtonPlaceholder(el, label)
+      if (!pendingId) return
+      notifyChanged(el)
+      setButtonSheet({ pendingId, initial: { text: label || 'Button', style: 'primary', actionType: 'url', dest: '' } })
+      return
+    }
+
+    if (!hasActiveSelection(el)) return
 
     if (mark.isClear) {
       if (clearInlineMarks(el) !== null) notifyChanged(el)
@@ -55,7 +77,7 @@ export default function BlockToolbar({ activeInputRef, lastBlockId }) {
             key={mark.id}
             className="icon-btn"
             type="button"
-            disabled={!selectionActive}
+            disabled={!mark.isButton && !selectionActive}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => handleMark(mark)}
           >
@@ -80,6 +102,19 @@ export default function BlockToolbar({ activeInputRef, lastBlockId }) {
           </React.Fragment>
         ))}
       </div>
+
+      <ButtonEditorSheet
+        open={!!buttonSheet}
+        initial={buttonSheet?.initial}
+        onClose={() => {
+          if (buttonSheet) cancelRichButton(buttonSheet.pendingId)
+          setButtonSheet(null)
+        }}
+        onSave={(config) => {
+          if (buttonSheet) finalizeRichButton(buttonSheet.pendingId, config)
+          setButtonSheet(null)
+        }}
+      />
     </div>
   )
 }
