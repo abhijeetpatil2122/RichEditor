@@ -14,11 +14,13 @@ export default function PullquoteBlock({ block, activeInputRef }) {
       />
       <div className="credit-row">
         <span className="rule" />
-        <input
-          className="credit-input"
+        <RichTextInput
+          html={block.creditHtml}
+          multiline={false}
+          onChange={(creditHtml) => updateBlock(block.id, { creditHtml })}
           placeholder="Credit"
-          value={block.credit}
-          onChange={(e) => updateBlock(block.id, { credit: e.target.value })}
+          className="credit-input"
+          activeInputRef={activeInputRef}
         />
         <span className="rule" />
       </div>
