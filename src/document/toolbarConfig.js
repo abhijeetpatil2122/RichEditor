@@ -8,7 +8,7 @@ export const TOOLBAR_CATEGORIES = [
     label: 'Text',
     items: [
       { id: 'paragraph', icon: 'paragraph', label: 'Text', type: BLOCK.PARAGRAPH },
-      { id: 'heading', icon: 'heading', label: 'Heading', type: BLOCK.HEADING, props: { size: 2 } },
+      { id: 'heading', icon: 'heading', label: 'Heading', type: BLOCK.HEADING, props: { size: 1 } },
       { id: 'preformatted', icon: 'preformatted', label: 'Code', type: BLOCK.PREFORMATTED },
       { id: 'footer', icon: 'footer', label: 'Footer', type: BLOCK.FOOTER }
     ]
@@ -53,6 +53,7 @@ export const TOOLBAR_CATEGORIES = [
       { id: 'details', icon: 'details', label: 'Details', type: BLOCK.DETAILS },
       { id: 'map', icon: 'map', label: 'Map', type: BLOCK.MAP },
       { id: 'math', icon: 'math', label: 'Math', type: BLOCK.MATH },
+      { id: 'buttons', icon: 'buttons', label: 'Buttons', type: BLOCK.BUTTONS },
       { id: 'divider', icon: 'divider', label: 'Divider', type: BLOCK.DIVIDER }
     ]
   }
@@ -69,6 +70,8 @@ export const INLINE_MARKS = [
   { id: 'superscript', icon: 'superscript', tag: 'SUP' },
   { id: 'marked', icon: 'marked', tag: 'MARK' },
   { id: 'spoiler', icon: 'spoiler', tag: 'SPAN', attrs: { 'data-spoiler': 'true' } },
+  { id: 'inline_math', icon: 'math', tag: 'SPAN', attrs: { 'data-inline-math': 'true' } },
   { id: 'link', icon: 'link', tag: 'A', isLink: true },
+  { id: 'rich_button', icon: 'buttons', isButton: true },
   { id: 'clear', icon: 'clear-format', isClear: true }
 ]
