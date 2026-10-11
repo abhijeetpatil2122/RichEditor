@@ -62,7 +62,7 @@ const COMMANDS = {
         type: 'photo',
         photo: {
           type: 'photo',
-          media: 'https://image.zaw-myo.workers.dev/image/34d6e621-5dd7-40f4-9b3d-25b2dbae1f12'
+          media: 'https://image.zaw-myo.workers.dev/image/82831e3b-e35a-4920-991f-36d5ea7b4fe3'
         }
       },
       { type: 'paragraph', text: 'Available commands:' },
@@ -97,7 +97,7 @@ const COMMANDS = {
             type: 'photo',
             photo: {
               type: 'photo',
-              media: 'https://image.zaw-myo.workers.dev/image/1c1a8556-7e8a-4c80-997f-b0f9a6863796'
+              media: 'https://image.zaw-myo.workers.dev/image/de6c8a03-ceff-47b5-975d-709ceb73b839'
             }
           },
           {
