@@ -69,7 +69,7 @@ export default function SendSheet({ open, onClose, user, channels, blocks, onRes
               <div className="destination-title">{ch.title}</div>
               {ch.username && <div className="destination-sub">@{ch.username}</div>}
             </div>
-            <button className="destination-send-btn" type="button" disabled={!!sendingId}>
+            <button className={`destination-send-btn ${sendingId === ch.id ? 'sent' : ''}`} type="button" disabled={!!sendingId}>
               {sendingId === ch.id ? '…' : <Icon name="send" size={13} />}
             </button>
           </div>
