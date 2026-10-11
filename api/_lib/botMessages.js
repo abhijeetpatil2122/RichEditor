@@ -131,12 +131,10 @@ const COMMANDS = {
         buttons: [
           {
             text: '➕ Add to Channel',
-            style: 'primary',
             url: 'https://t.me/WriteRichBot?startchannel&admin=post_messages'
           },
           {
             text: '👥 Add to Group',
-            style: 'primary',
             url: 'https://t.me/WriteRichBot?startgroup'
           }
         ]
